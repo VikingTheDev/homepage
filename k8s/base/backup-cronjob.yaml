@@ -1,0 +1,144 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: homepage
+spec:
+  # Run every 6 hours
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: cgr.dev/chainguard/postgres:latest
+            env:
+            - name: POSTGRES_HOST
+              value: "postgres"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "homepage"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: MINIO_ENDPOINT
+              value: "minio:9000"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: MINIO_ROOT_PASSWORD
+            - name: BACKUP_RETENTION_DAYS
+              value: "7"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              # Install required tools
+              apk add --no-cache aws-cli gzip
+              
+              # Configure AWS CLI for MinIO
+              aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+              aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+              aws configure set default.region us-east-1
+              
+              # Create bucket if it doesn't exist
+              aws --endpoint-url http://${MINIO_ENDPOINT} s3 mb s3://postgres-backups || true
+              
+              # Create backup filename with timestamp
+              BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).sql.gz"
+              
+              echo "Starting backup of database ${POSTGRES_DB}..."
+              
+              # Create backup and compress
+              PGPASSWORD=${POSTGRES_PASSWORD} pg_dump \
+                -h ${POSTGRES_HOST} \
+                -p ${POSTGRES_PORT} \
+                -U ${POSTGRES_USER} \
+                -d ${POSTGRES_DB} \
+                --no-owner \
+                --no-acl \
+                --clean \
+                --if-exists \
+                | gzip > /tmp/${BACKUP_FILE}
+              
+              # Upload to MinIO
+              echo "Uploading backup to MinIO..."
+              aws --endpoint-url http://${MINIO_ENDPOINT} s3 cp \
+                /tmp/${BACKUP_FILE} \
+                s3://postgres-backups/${BACKUP_FILE}
+              
+              # Clean up local backup
+              rm /tmp/${BACKUP_FILE}
+              
+              # Delete old backups (older than BACKUP_RETENTION_DAYS)
+              echo "Cleaning up old backups (retention: ${BACKUP_RETENTION_DAYS} days)..."
+              CUTOFF_DATE=$(date -d "${BACKUP_RETENTION_DAYS} days ago" +%Y%m%d)
+              
+              aws --endpoint-url http://${MINIO_ENDPOINT} s3 ls s3://postgres-backups/ | while read -r line; do
+                BACKUP_DATE=$(echo $line | awk '{print $4}' | grep -oP 'backup-\K[0-9]{8}')
+                if [ ! -z "$BACKUP_DATE" ] && [ "$BACKUP_DATE" -lt "$CUTOFF_DATE" ]; then
+                  BACKUP_NAME=$(echo $line | awk '{print $4}')
+                  echo "Deleting old backup: $BACKUP_NAME"
+                  aws --endpoint-url http://${MINIO_ENDPOINT} s3 rm s3://postgres-backups/$BACKUP_NAME
+                fi
+              done
+              
+              echo "Backup completed successfully!"
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-restore-script
+  namespace: homepage
+data:
+  restore.sh: |
+    #!/bin/sh
+    set -e
+    
+    if [ -z "$1" ]; then
+      echo "Usage: $0 <backup-filename>"
+      echo "Available backups:"
+      aws --endpoint-url http://${MINIO_ENDPOINT} s3 ls s3://postgres-backups/
+      exit 1
+    fi
+    
+    BACKUP_FILE=$1
+    
+    echo "Downloading backup: ${BACKUP_FILE}"
+    aws --endpoint-url http://${MINIO_ENDPOINT} s3 cp \
+      s3://postgres-backups/${BACKUP_FILE} \
+      /tmp/${BACKUP_FILE}
+    
+    echo "Restoring database..."
+    gunzip < /tmp/${BACKUP_FILE} | PGPASSWORD=${POSTGRES_PASSWORD} psql \
+      -h ${POSTGRES_HOST} \
+      -p ${POSTGRES_PORT} \
+      -U ${POSTGRES_USER} \
+      -d ${POSTGRES_DB}
+    
+    rm /tmp/${BACKUP_FILE}
+    echo "Restore completed successfully!"

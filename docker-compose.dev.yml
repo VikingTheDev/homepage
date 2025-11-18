@@ -1,0 +1,57 @@
+services:
+  # Override backend for development with hot reload
+  backend:
+    build:
+      target: development
+    user: root
+    entrypoint: []
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/Cargo.toml:/app/Cargo.toml
+      - ./backend/Cargo.lock:/app/Cargo.lock
+      - backend-cargo-cache:/usr/local/cargo/registry
+      - backend-target-cache:/app/target
+    command: ["cargo", "run"]
+    ports:
+      - "8000:8000"
+
+  # Override frontend for development with hot reload
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./frontend/svelte.config.js:/app/svelte.config.js:ro
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: ["/usr/local/bin/pnpm", "run", "dev", "--host", "0.0.0.0"]
+
+  # Expose Vault for development
+  vault:
+    ports:
+      - "8200:8200"
+
+  # Expose PostgreSQL for development
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # Expose ValKey for development
+  valkey:
+    ports:
+      - "6379:6379"
+
+  # Expose MinIO console
+  minio:
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+volumes:
+  backend-cargo-cache:
+  backend-target-cache:

@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: homepage
+
+bases:
+  - ../../base
+
+patchesStrategicMerge:
+  - ingress-patch.yaml
+  - backend-patch.yaml
+
+images:
+  - name: ghcr.io/vikingthedev/homepage-backend
+    newTag: prod
+  - name: ghcr.io/vikingthedev/homepage-frontend
+    newTag: prod
+
+replicas:
+  - name: backend
+    count: 3
+  - name: frontend
+    count: 3
+
+configMapGenerator:
+  - name: environment
+    literals:
+      - ENVIRONMENT=production

@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      target: production
+    environment:
+      ENABLE_MTLS: "true"
+      RUST_LOG: info
+
+  frontend:
+    build:
+      target: production
+
+  nginx:
+    # In production, this would be replaced by K8s Ingress with Let's Encrypt
+    ports:
+      - "80:8080"

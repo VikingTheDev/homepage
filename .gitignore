@@ -1,0 +1,42 @@
+# Rust
+target/
+**/*.rs.bk
+*.pdb
+
+# Node
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+.npm
+.eslintcache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.kubeconfig
+
+# Vault
+.vault-token
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db

@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oauth2-proxy
+  namespace: homepage
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oauth2-proxy-secret
+  namespace: homepage
+type: Opaque
+stringData:
+  # These should be stored in Vault in production
+  OAUTH2_PROXY_CLIENT_ID: "Ov23liEL0StZ0uNZYm6I"
+  OAUTH2_PROXY_CLIENT_SECRET: "764fa107ed091dda86e868935383ebe4ee1ddc36"
+  OAUTH2_PROXY_COOKIE_SECRET: "changeme-32-character-secret=="
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: homepage
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      serviceAccountName: oauth2-proxy
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        args:
+        - --provider=github
+        - --github-org=VikingTheDev
+        - --github-repo=VikingTheDev/homepage
+        - --email-domain=*
+        - --upstream=http://grafana:3000
+        - --http-address=0.0.0.0:4180
+        - --cookie-secure=true
+        - --cookie-httponly=true
+        - --cookie-samesite=lax
+        - --set-xauthrequest=true
+        - --pass-access-token=true
+        - --pass-user-headers=true
+        envFrom:
+        - secretRef:
+            name: oauth2-proxy-secret
+        ports:
+        - containerPort: 4180
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 4180
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 4180
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: homepage
+spec:
+  selector:
+    app: oauth2-proxy
+  ports:
+  - port: 4180
+    targetPort: 4180
+    name: http
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: homepage
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - grafana.vikingthe.dev
+    secretName: grafana-tls
+  rules:
+  - host: grafana.vikingthe.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: oauth2-proxy
+            port:
+              number: 4180
