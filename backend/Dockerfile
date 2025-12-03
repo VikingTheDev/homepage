@@ -1,5 +1,16 @@
 # Multi-stage Dockerfile for Rust backend
 
+# Chef stage - prepare dependency recipe
+FROM cgr.dev/chainguard/rust:latest AS chef
+WORKDIR /app
+RUN cargo install cargo-chef
+
+# Planner stage - analyze dependencies
+FROM chef AS planner
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+RUN cargo chef prepare --recipe-path recipe.json
+
 # Development stage
 FROM cgr.dev/chainguard/rust:latest AS development
 WORKDIR /app
@@ -17,24 +28,21 @@ COPY --chown=nonroot:nonroot migrations ./migrations
 # Development command (will be overridden in docker-compose)
 CMD ["cargo", "watch", "-x", "run"]
 
-# Builder stage
-FROM cgr.dev/chainguard/rust:latest AS builder
-WORKDIR /app
+# Builder stage with cargo-chef
+FROM chef AS builder
 
-# Copy dependency files
-COPY Cargo.toml Cargo.lock ./
+# Copy the recipe from planner
+COPY --from=planner /app/recipe.json recipe.json
 
-# Create dummy main to cache dependencies
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
+# Build dependencies only (this layer is cached unless dependencies change)
+RUN cargo chef cook --release --recipe-path recipe.json
 
 # Copy actual source code
+COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY migrations ./migrations
 
-# Build the application
+# Build the application (only compiles your code since deps are cached)
 RUN cargo build --release
 
 # Production runtime stage
