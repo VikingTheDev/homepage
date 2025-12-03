@@ -32,13 +32,16 @@ export VAULT_ADDR="http://localhost:$VAULT_PORT"
 echo "📡 Connecting to Vault at $VAULT_ADDR"
 
 # Wait for Vault to be ready
+# Wait for Vault to be ready
 echo "⏳ Waiting for Vault to be ready..."
 RETRIES=30
 COUNT=0
-until vault status > /dev/null 2>&1; do
+until vault status 2>&1 | grep -qE "(Initialized|Sealed)"; do
   COUNT=$((COUNT+1))
   if [ $COUNT -gt $RETRIES ]; then
     echo "❌ Vault did not become ready in time. Check that port-forward is running."
+    echo "Vault status output:"
+    vault status 2>&1 || true
     exit 1
   fi
   echo "Waiting for Vault to be ready... ($COUNT/$RETRIES)"
