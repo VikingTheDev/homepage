@@ -95,6 +95,12 @@ A production-ready, fully containerized fullstack application built with Rust (A
 
 6. **Initialize Vault**:
    ```bash
+   # Create namespace if it doesn't exist
+   kubectl create namespace homepage
+
+   # Deploy the Vault resources to the namespace
+   kubectl apply -k k8s/overlays/prod (or kubectl apply -k k8s/overlays/dev for dev)
+   
    # Port-forward to Vault
    kubectl port-forward -n homepage svc/vault 8200:8200
    

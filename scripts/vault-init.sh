@@ -3,6 +3,9 @@ set -e
 
 echo "Initializing Vault..."
 
+# Set Vault address
+export VAULT_ADDR='http://localhost:8200'
+
 # Wait for Vault to be ready
 until vault status > /dev/null 2>&1; do
   echo "Waiting for Vault to be ready..."
