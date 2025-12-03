@@ -1,16 +1,51 @@
 #!/bin/bash
 set -e
 
-echo "Initializing Vault..."
+# Usage: ./vault-init.sh [namespace] [port]
+# Default namespace is 'homepage' (prod), use 'homepage-dev' for dev
+# Default port is 8200
+
+NAMESPACE=${1:-homepage}
+VAULT_PORT=${2:-8200}
+
+echo "🔐 Initializing Vault in namespace: $NAMESPACE"
+echo "================================================"
+
+# Check prerequisites
+command -v vault >/dev/null 2>&1 || { echo "❌ vault CLI is required but not installed. Aborting." >&2; exit 1; }
+command -v kubectl >/dev/null 2>&1 || { echo "❌ kubectl is required but not installed. Aborting." >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "❌ jq is required but not installed. Aborting." >&2; exit 1; }
+
+echo "✅ Prerequisites check passed"
+
+# Check if port-forward is already running
+if ! nc -z localhost $VAULT_PORT 2>/dev/null; then
+  echo "⚠️  Port-forward to Vault is not detected on port $VAULT_PORT"
+  echo "Please run in another terminal:"
+  echo "  kubectl port-forward -n $NAMESPACE svc/vault $VAULT_PORT:8200"
+  echo ""
+  read -p "Press Enter once port-forward is running..."
+fi
 
 # Set Vault address
-export VAULT_ADDR='http://localhost:8200'
+export VAULT_ADDR="http://localhost:$VAULT_PORT"
+echo "📡 Connecting to Vault at $VAULT_ADDR"
 
 # Wait for Vault to be ready
+echo "⏳ Waiting for Vault to be ready..."
+RETRIES=30
+COUNT=0
 until vault status > /dev/null 2>&1; do
-  echo "Waiting for Vault to be ready..."
+  COUNT=$((COUNT+1))
+  if [ $COUNT -gt $RETRIES ]; then
+    echo "❌ Vault did not become ready in time. Check that port-forward is running."
+    exit 1
+  fi
+  echo "Waiting for Vault to be ready... ($COUNT/$RETRIES)"
   sleep 2
 done
+
+echo "✅ Vault is ready"
 
 # Initialize Vault (skip if already initialized)
 if vault status | grep -q "Initialized.*false"; then
@@ -117,9 +152,23 @@ echo "Role ID: $ROLE_ID"
 echo "Secret ID: $SECRET_ID"
 echo ""
 echo "Store these in your Kubernetes secrets:"
-echo "kubectl create secret generic backend-vault-auth -n homepage \\"
+echo "kubectl create secret generic backend-vault-auth -n $NAMESPACE \\"
 echo "  --from-literal=role-id=$ROLE_ID \\"
 echo "  --from-literal=secret-id=$SECRET_ID"
 echo ""
+echo "Or run this command now:"
+read -p "Create Kubernetes secret now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  kubectl create secret generic backend-vault-auth -n $NAMESPACE \
+    --from-literal=role-id=$ROLE_ID \
+    --from-literal=secret-id=$SECRET_ID \
+    --dry-run=client -o yaml | kubectl apply -f -
+  echo "✅ Secret created/updated in namespace $NAMESPACE"
+fi
+echo ""
 echo "Root token and unseal keys are in vault-keys.txt"
 echo "KEEP THIS FILE SECURE AND BACKED UP!"
+echo ""
+echo "📝 Cleanup temporary files:"
+echo "  rm -f pki_intermediate.csr intermediate.cert.pem"

@@ -9,6 +9,12 @@ command -v docker-compose >/dev/null 2>&1 || { echo "❌ Docker Compose is requi
 
 echo "✅ Prerequisites check passed"
 
+# Check for pnpm
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "⚠️  pnpm not found. Installing pnpm globally..."
+  npm install -g pnpm
+fi
+
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
   echo "📝 Creating .env file from template..."
