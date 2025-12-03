@@ -251,10 +251,10 @@ kubectl port-forward -n homepage svc/vault 8200:8200
 
 ```bash
 # Update the ClusterIssuer with your email
-# Edit k8s/base/cert-manager-issuer.yaml and replace email address
+# Edit scripts/cert-manager-issuers.yaml and replace email address
 
 # Apply the issuer
-kubectl apply -f k8s/base/cert-manager-issuer.yaml
+kubectl apply -f scripts/cert-manager-issuers.yaml
 
 # Verify certificates are being issued
 kubectl get certificates -n homepage

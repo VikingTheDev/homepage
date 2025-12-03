@@ -10,6 +10,6 @@ spec:
       - name: backend
         env:
         - name: ENABLE_MTLS
-          value: "true"
+          value: "false"
         - name: RUST_LOG
           value: "info"

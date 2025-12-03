@@ -36,6 +36,12 @@ spec:
           value: "redis://valkey:6379"
         - name: VAULT_ADDR
           value: "http://vault:8200"
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backend-vault-auth
+              key: token
+              optional: true
         - name: ENABLE_MTLS
           value: "false"
         - name: RUST_LOG
