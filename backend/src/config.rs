@@ -14,6 +14,7 @@ pub struct Config {
     pub enable_mtls: bool,
     pub tls_cert_path: String,
     pub tls_key_path: String,
+    #[allow(dead_code)]
     pub tls_ca_path: String,
 }
 

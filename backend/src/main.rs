@@ -21,7 +21,9 @@ use config::Config;
 #[derive(Clone)]
 struct AppState {
     db: sqlx::PgPool,
+    #[allow(dead_code)]
     redis: redis::aio::ConnectionManager,
+    #[allow(dead_code)]
     config: Arc<Config>,
 }
 

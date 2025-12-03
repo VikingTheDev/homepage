@@ -77,6 +77,7 @@ pub async fn watch_certificates(cert_path: String, key_path: String) {
     }
 }
 
+#[allow(dead_code)]
 pub async fn is_cert_reload_pending() -> bool {
     *CERT_RELOAD_SIGNAL.read().await
 }
