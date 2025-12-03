@@ -84,16 +84,20 @@ spec:
             memory: 4Gi
         livenessProbe:
           httpGet:
-            path: /v1/sys/health
+            path: /v1/sys/health?uninitcode=204&sealedcode=204
             port: 8200
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 5
         readinessProbe:
           httpGet:
-            path: /v1/sys/health
+            path: /v1/sys/health?uninitcode=204&sealedcode=204
             port: 8200
           initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
       volumes:
       - name: vault-config
         configMap:
