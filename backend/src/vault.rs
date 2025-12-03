@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::info;
-use vaultrs::client::{VaultClient, VaultClientSettingsBuilder};
 use vaultrs::auth::approle;
+use vaultrs::client::{VaultClient, VaultClientSettingsBuilder};
 
 use crate::config::Config;
 
@@ -18,8 +18,7 @@ pub async fn init_vault_client(config: &Config) -> Result<VaultClient> {
         .build()
         .context("Failed to build Vault client settings")?;
 
-    let client = VaultClient::new(settings)
-        .context("Failed to create Vault client")?;
+    let client = VaultClient::new(settings).context("Failed to create Vault client")?;
 
     // Authenticate using AppRole
     if !config.vault_role_id.is_empty() && !config.vault_secret_id.is_empty() {
@@ -43,15 +42,18 @@ pub async fn init_vault_client(config: &Config) -> Result<VaultClient> {
     Ok(client)
 }
 
-pub async fn fetch_db_credentials(
-    client: &VaultClient,
-    config: &Config,
-) -> Result<DbCredentials> {
+pub async fn fetch_db_credentials(client: &VaultClient, config: &Config) -> Result<DbCredentials> {
     info!("Fetching database credentials from Vault");
 
     // For production: use dynamic database credentials
     // For development: use static KV secrets
-    match vaultrs::kv2::read::<serde_json::Value>(client, "secret", &format!("database/{}", config.database_name)).await {
+    match vaultrs::kv2::read::<serde_json::Value>(
+        client,
+        "secret",
+        &format!("database/{}", config.database_name),
+    )
+    .await
+    {
         Ok(secret) => {
             let username = secret["username"]
                 .as_str()
@@ -66,10 +68,14 @@ pub async fn fetch_db_credentials(
         }
         Err(e) => {
             // Fallback to environment variables for local development
-            tracing::warn!("Failed to fetch credentials from Vault: {}. Using fallback.", e);
+            tracing::warn!(
+                "Failed to fetch credentials from Vault: {}. Using fallback.",
+                e
+            );
             Ok(DbCredentials {
                 username: std::env::var("DATABASE_USER").unwrap_or_else(|_| "postgres".to_string()),
-                password: std::env::var("DATABASE_PASSWORD").unwrap_or_else(|_| "postgres".to_string()),
+                password: std::env::var("DATABASE_PASSWORD")
+                    .unwrap_or_else(|_| "postgres".to_string()),
             })
         }
     }

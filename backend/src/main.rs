@@ -1,10 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use prometheus::{Encoder, TextEncoder};
 use serde::Serialize;
 use std::sync::Arc;
@@ -54,9 +48,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Database connection established");
 
     // Run migrations
-    sqlx::migrate!("./migrations")
-        .run(&db_pool)
-        .await?;
+    sqlx::migrate!("./migrations").run(&db_pool).await?;
     info!("Database migrations completed");
 
     // Initialize Redis/ValKey connection
@@ -106,16 +98,22 @@ async fn root_handler() -> &'static str {
 async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
     // Check database connection
     match sqlx::query("SELECT 1").fetch_one(&state.db).await {
-        Ok(_) => (StatusCode::OK, Json(serde_json::json!({
-            "status": "healthy",
-            "database": "connected",
-        }))),
+        Ok(_) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "status": "healthy",
+                "database": "connected",
+            })),
+        ),
         Err(e) => {
             warn!("Health check failed: {}", e);
-            (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
-                "status": "unhealthy",
-                "database": "disconnected",
-            })))
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "status": "unhealthy",
+                    "database": "disconnected",
+                })),
+            )
         }
     }
 }
@@ -125,7 +123,7 @@ async fn metrics_handler() -> impl IntoResponse {
     let metric_families = prometheus::gather();
     let mut buffer = vec![];
     encoder.encode(&metric_families, &mut buffer).unwrap();
-    
+
     (
         StatusCode::OK,
         [("content-type", "text/plain; version=0.0.4")],

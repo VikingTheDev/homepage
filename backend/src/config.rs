@@ -37,10 +37,8 @@ impl Config {
                 .unwrap_or_else(|_| "redis://valkey:6379".to_string()),
             vault_addr: std::env::var("VAULT_ADDR")
                 .unwrap_or_else(|_| "http://vault:8200".to_string()),
-            vault_role_id: std::env::var("VAULT_ROLE_ID")
-                .unwrap_or_else(|_| "".to_string()),
-            vault_secret_id: std::env::var("VAULT_SECRET_ID")
-                .unwrap_or_else(|_| "".to_string()),
+            vault_role_id: std::env::var("VAULT_ROLE_ID").unwrap_or_else(|_| "".to_string()),
+            vault_secret_id: std::env::var("VAULT_SECRET_ID").unwrap_or_else(|_| "".to_string()),
             enable_mtls: std::env::var("ENABLE_MTLS")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()

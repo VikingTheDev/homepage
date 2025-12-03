@@ -9,7 +9,10 @@ lazy_static::lazy_static! {
 }
 
 pub async fn watch_certificates(cert_path: String, key_path: String) {
-    info!("Starting certificate watcher for {} and {}", cert_path, key_path);
+    info!(
+        "Starting certificate watcher for {} and {}",
+        cert_path, key_path
+    );
 
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
@@ -18,20 +21,19 @@ pub async fn watch_certificates(cert_path: String, key_path: String) {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let tx = tx.clone();
-            
+
             let mut watcher = RecommendedWatcher::new(
-                move |res: Result<Event, notify::Error>| {
-                    match res {
-                        Ok(event) => {
-                            if event.kind.is_modify() || event.kind.is_create() {
-                                let _ = tx.blocking_send(event);
-                            }
+                move |res: Result<Event, notify::Error>| match res {
+                    Ok(event) => {
+                        if event.kind.is_modify() || event.kind.is_create() {
+                            let _ = tx.blocking_send(event);
                         }
-                        Err(e) => error!("Watch error: {:?}", e),
                     }
+                    Err(e) => error!("Watch error: {:?}", e),
                 },
                 Config::default(),
-            ).unwrap();
+            )
+            .unwrap();
 
             // Watch the directory containing the certificates
             if let Some(cert_dir) = Path::new(&cert_path).parent() {
@@ -52,7 +54,7 @@ pub async fn watch_certificates(cert_path: String, key_path: String) {
     // Handle file change events
     while let Some(event) = rx.recv().await {
         info!("Certificate file changed: {:?}", event);
-        
+
         // Set reload signal
         {
             let mut signal = CERT_RELOAD_SIGNAL.write().await;
@@ -64,7 +66,7 @@ pub async fn watch_certificates(cert_path: String, key_path: String) {
         // 2. Validate them
         // 3. Update the TLS configuration
         // 4. Gracefully reload database connections with new certs
-        
+
         info!("Certificate reload triggered (graceful reload not yet fully implemented)");
         warn!("Manual restart may be required for full certificate rotation");
 
