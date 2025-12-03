@@ -50,6 +50,8 @@ spec:
     metadata:
       labels:
         app: vault
+      annotations:
+        checksum/config: "vault-config-v2"
     spec:
       serviceAccountName: vault
       securityContext:
