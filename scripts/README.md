@@ -74,6 +74,44 @@ Deploys the application to a Kubernetes cluster (K3s).
 
 ---
 
+### `setup-vault-bootstrap.sh`
+Configures the vault-bootstrap pod to enable transit auto-unseal for the main Vault instance.
+
+**Usage:**
+```bash
+# For production
+./scripts/setup-vault-bootstrap.sh homepage
+
+# For development
+./scripts/setup-vault-bootstrap.sh homepage-dev
+```
+
+**Prerequisites:**
+- kubectl installed
+- vault-bootstrap deployment running in the namespace
+
+**What it does:**
+1. Checks that vault-bootstrap pod exists and is ready
+2. Enables the transit secrets engine
+3. Creates the `autounseal` key in the transit engine
+4. Verifies the configuration
+
+**When to run:**
+- **After** deploying Kubernetes manifests (`kubectl apply -k k8s/overlays/prod`)
+- **Before** initializing the main Vault
+- Only needs to be run once per environment
+
+**After running:**
+- Restart main Vault pod: `kubectl delete pod vault-0 -n <namespace>`
+- Then initialize Vault: `./scripts/vault-init.sh <namespace>`
+
+**How it works:**
+- The main Vault uses transit auto-unseal, which means it encrypts its master key using the vault-bootstrap's transit engine
+- This allows the main Vault to automatically unseal on restart without manual intervention
+- The vault-bootstrap runs in dev mode and provides the transit service
+
+---
+
 ### `vault-init.sh`
 Initializes HashiCorp Vault and sets up secrets management.
 
@@ -95,6 +133,7 @@ Initializes HashiCorp Vault and sets up secrets management.
 - jq installed
 - netcat/nc installed
 - Port-forward to Vault service running
+- **vault-bootstrap configured** (run `setup-vault-bootstrap.sh` first)
 
 **Port-forward setup:**
 ```bash

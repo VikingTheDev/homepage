@@ -204,7 +204,23 @@ watch kubectl get pods -n homepage
 # Press Ctrl+C when all pods show Running or Completed status
 ```
 
-#### 3.3 Initialize Vault
+#### 3.3 Setup Vault Bootstrap (Transit Auto-Unseal)
+
+```bash
+# Configure the vault-bootstrap pod to enable transit auto-unseal
+./scripts/setup-vault-bootstrap.sh homepage
+
+# This script will:
+# - Enable the transit secrets engine
+# - Create the autounseal key
+# - Verify the configuration
+
+# Restart the main Vault pod to activate auto-unseal
+kubectl delete pod vault-0 -n homepage
+kubectl wait --for=condition=ready pod/vault-0 -n homepage --timeout=120s
+```
+
+#### 3.4 Initialize Vault
 
 ```bash
 # In one terminal: Port-forward to Vault
