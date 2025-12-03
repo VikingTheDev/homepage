@@ -69,8 +69,6 @@ A production-ready, fully containerized fullstack application built with Rust (A
 
 ## 📦 Kubernetes Deployment Guide
 
-This guide provides step-by-step instructions for deploying the application on a Linux server using K3s (lightweight Kubernetes).
-
 ### Prerequisites
 
 - Linux server (VPS) with:
@@ -482,49 +480,6 @@ kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download
 
 # Uninstall K3s
 /usr/local/bin/k3s-uninstall.sh
-```
-
----
-
-## 🚀 Quick Start (Local Development)
-
-### Prerequisites
-
-```
-homepage/
-├── backend/                 # Rust Axum API
-│   ├── src/
-│   │   ├── main.rs         # Server entrypoint
-│   │   ├── config.rs       # Configuration management
-│   │   ├── vault.rs        # Vault integration
-│   │   ├── db.rs           # PostgreSQL connection pool
-│   │   └── cert_watcher.rs # Certificate hot-reload
-│   ├── Cargo.toml
-│   └── Dockerfile          # Multi-stage build
-├── frontend/               # Svelte + TypeScript
-│   ├── src/
-│   │   ├── App.svelte     # Main component
-│   │   └── main.ts        # App entrypoint
-│   ├── vite.config.ts
-│   └── Dockerfile
-├── k8s/                    # Kubernetes manifests
-│   ├── base/              # Base resources
-│   │   ├── vault.yaml
-│   │   ├── postgres.yaml
-│   │   ├── backend.yaml
-│   │   └── ...
-│   └── overlays/
-│       ├── dev/           # Development overrides
-│       └── prod/          # Production overrides
-├── .github/
-│   └── workflows/
-│       ├── dev.yml        # CI/CD for dev branch
-│       └── prod.yml       # CI/CD for prod branch
-├── monitoring/            # Prometheus rules & dashboards
-├── scripts/              # Utility scripts
-├── docker-compose.yml    # Base compose file
-├── docker-compose.dev.yml # Development overrides
-└── docker-compose.prod.yml
 ```
 
 ## 🔧 Configuration
