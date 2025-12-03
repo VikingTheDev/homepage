@@ -50,17 +50,29 @@ done
 
 echo "✅ Vault is ready"
 
+# Check if using auto-unseal (transit)
+SEAL_TYPE=$(vault status -format=json 2>/dev/null | jq -r '.seal_type' || echo "shamir")
+
 # Initialize Vault (skip if already initialized)
 if vault status | grep -q "Initialized.*false"; then
   echo "Initializing Vault for the first time..."
-  vault operator init -key-shares=5 -key-threshold=3 > vault-keys.txt
-  echo "Vault keys saved to vault-keys.txt - STORE THESE SECURELY!"
   
-  # Unseal Vault
-  echo "Unsealing Vault..."
-  vault operator unseal $(grep 'Key 1:' vault-keys.txt | awk '{print $NF}')
-  vault operator unseal $(grep 'Key 2:' vault-keys.txt | awk '{print $NF}')
-  vault operator unseal $(grep 'Key 3:' vault-keys.txt | awk '{print $NF}')
+  if [ "$SEAL_TYPE" = "transit" ] || vault status 2>&1 | grep -q "Seal Type.*transit"; then
+    echo "Using transit auto-unseal - no recovery keys needed"
+    vault operator init > vault-keys.txt
+    echo "Vault keys saved to vault-keys.txt - STORE THESE SECURELY!"
+    echo "Note: With transit auto-unseal, Vault will automatically unseal on restart"
+  else
+    echo "Using Shamir seal - generating unseal keys"
+    vault operator init -key-shares=5 -key-threshold=3 > vault-keys.txt
+    echo "Vault keys saved to vault-keys.txt - STORE THESE SECURELY!"
+    
+    # Unseal Vault
+    echo "Unsealing Vault..."
+    vault operator unseal $(grep 'Key 1:' vault-keys.txt | awk '{print $NF}')
+    vault operator unseal $(grep 'Key 2:' vault-keys.txt | awk '{print $NF}')
+    vault operator unseal $(grep 'Key 3:' vault-keys.txt | awk '{print $NF}')
+  fi
   
   # Get root token
   ROOT_TOKEN=$(grep 'Initial Root Token:' vault-keys.txt | awk '{print $NF}')
