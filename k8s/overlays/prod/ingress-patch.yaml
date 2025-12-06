@@ -5,12 +5,7 @@ metadata:
   namespace: homepage
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
-  tls:
-  - hosts:
-    - vikingthe.dev
-    secretName: homepage-prod-tls
   rules:
   - host: vikingthe.dev
     http:
@@ -37,12 +32,7 @@ metadata:
   namespace: homepage
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
-  tls:
-  - hosts:
-    - grafana.vikingthe.dev
-    secretName: grafana-prod-tls
   rules:
   - host: grafana.vikingthe.dev
     http:

@@ -294,10 +294,10 @@ kubectl get svc -n homepage
 # Check ingress
 kubectl get ingress -n homepage
 
-# Test backend health
-curl https://vikingthe.dev/api/example
+# Test backend health (from VPS, use HTTP for internal testing)
+curl http://localhost/api/example
 
-# Access frontend
+# Access frontend from browser (Cloudflare provides HTTPS)
 # Open browser: https://vikingthe.dev
 
 # Access Grafana (if OAuth configured)
