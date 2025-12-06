@@ -76,6 +76,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(root_handler))
         .route("/health", get(health_handler))
+        .route("/api/health", get(health_handler))  // Add /api/health for ingress
         .route("/metrics", get(metrics_handler))
         .route("/api/example", get(example_handler))
         .with_state(state)
