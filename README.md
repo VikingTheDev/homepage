@@ -204,23 +204,7 @@ watch kubectl get pods -n homepage
 # Press Ctrl+C when all pods show Running or Completed status
 ```
 
-#### 3.3 Setup Vault Bootstrap (Transit Auto-Unseal)
-
-```bash
-# Configure the vault-bootstrap pod to enable transit auto-unseal
-./scripts/setup-vault-bootstrap.sh homepage
-
-# This script will:
-# - Enable the transit secrets engine
-# - Create the autounseal key
-# - Verify the configuration
-
-# Restart the main Vault pod to activate auto-unseal
-kubectl delete pod vault-0 -n homepage
-kubectl wait --for=condition=ready pod/vault-0 -n homepage --timeout=120s
-```
-
-#### 3.4 Initialize Vault
+#### 3.3 Initialize Vault
 
 ```bash
 # In one terminal: Port-forward to Vault
@@ -231,14 +215,18 @@ kubectl port-forward -n homepage svc/vault 8200:8200
 
 # The script will:
 # - Wait for Vault to be ready
-# - Initialize Vault (or prompt for root token if already initialized)
+# - Initialize Vault with Shamir seal (5 unseal keys, threshold of 3)
+# - Automatically unseal Vault with the generated keys
 # - Set up PKI for mTLS certificates
 # - Create AppRole for backend authentication
 # - Optionally create the Kubernetes secret
 
 # IMPORTANT: Save the output! You'll see:
-# - vault-keys.txt (contains unseal keys and root token)
+# - vault-keys.txt (contains 5 unseal keys and root token)
 # - Backend AppRole credentials (Role ID and Secret ID)
+
+# CRITICAL: Back up vault-keys.txt to a secure location!
+# You'll need these keys to unseal Vault after pod restarts.
 
 # The script will offer to create the secret automatically
 # Or manually create it:
@@ -246,6 +234,18 @@ kubectl port-forward -n homepage svc/vault 8200:8200
 #   --from-literal=role-id=<ROLE_ID> \
 #   --from-literal=secret-id=<SECRET_ID>
 ```
+
+**Note on Vault Unsealing**: After a pod restart, Vault will be sealed. You have two options:
+
+1. **Automatic (recommended for production)**: Create a Kubernetes Job that unseals Vault on startup
+2. **Manual**: Run the unseal script whenever the pod restarts:
+   ```bash
+   # Port-forward to Vault
+   kubectl port-forward -n homepage svc/vault 8200:8200
+   
+   # Run unseal script (needs vault-keys.txt in current directory)
+   ./scripts/vault-unseal.sh homepage
+   ```
 
 #### 3.4 Configure Let's Encrypt (SSL Certificates)
 

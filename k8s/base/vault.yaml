@@ -16,9 +16,8 @@ data:
     api_addr = "http://vault:8200"
     cluster_addr = "https://vault:8201"
 
-    storage "raft" {
-      path    = "/vault/data"
-      node_id = "vault-1"
+    storage "file" {
+      path = "/vault/data"
     }
 
     listener "tcp" {
@@ -26,14 +25,8 @@ data:
       tls_disable = 1
     }
 
-    seal "transit" {
-      address            = "http://vault-bootstrap:8200"
-      token              = "dev-root-token"
-      disable_renewal    = "false"
-      key_name           = "autounseal"
-      mount_path         = "transit/"
-      tls_skip_verify    = "true"
-    }
+    # Using default Shamir seal (traditional unseal keys)
+    # No auto-unseal configuration needed
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -84,15 +77,15 @@ spec:
             memory: 4Gi
         livenessProbe:
           httpGet:
-            path: /v1/sys/health?uninitcode=204&sealedcode=204
+            path: /v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204
             port: 8200
-          initialDelaySeconds: 60
+          initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 5
         readinessProbe:
           httpGet:
-            path: /v1/sys/health?uninitcode=204&sealedcode=204
+            path: /v1/sys/health?standbyok=true&uninitcode=204
             port: 8200
           initialDelaySeconds: 10
           periodSeconds: 5
