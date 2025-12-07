@@ -14,7 +14,7 @@ stringData:
   # These should be stored in Vault in production
   OAUTH2_PROXY_CLIENT_ID: "Ov23liEL0StZ0uNZYm6I"
   OAUTH2_PROXY_CLIENT_SECRET: "764fa107ed091dda86e868935383ebe4ee1ddc36"
-  OAUTH2_PROXY_COOKIE_SECRET: "changeme-32-character-secret=="
+  OAUTH2_PROXY_COOKIE_SECRET: "changeme-32-character-secret!!"
 ---
 apiVersion: apps/v1
 kind: Deployment
