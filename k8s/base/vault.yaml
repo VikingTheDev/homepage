@@ -33,6 +33,8 @@ kind: StatefulSet
 metadata:
   name: vault
   namespace: homepage
+  annotations:
+    argocd.argoproj.io/sync-options: "Prune=false"
 spec:
   serviceName: vault
   replicas: 1
