@@ -109,27 +109,3 @@ spec:
             name: oauth2-proxy
             port:
               number: 4180
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd-ingress
-  annotations:
-    kubernetes.io/ingress.class: "traefik"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-spec:
-  tls:
-  - hosts:
-    - argo.vikingthe.dev
-    secretName: vikingthe-origin-cert
-  rules:
-  - host: argo.vikingthe.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: argocd-server
-            port:
-              number: 443

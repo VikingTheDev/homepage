@@ -15,6 +15,7 @@ resources:
   - grafana.yaml
   - oauth2-proxy.yaml
   - backup-cronjob.yaml
+  - argocd-ingress.yaml
 
 images:
   - name: ghcr.io/vikingthedev/homepage-backend
