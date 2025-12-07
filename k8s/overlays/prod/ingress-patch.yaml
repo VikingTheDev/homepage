@@ -9,7 +9,7 @@ spec:
   tls:
   - hosts:
     - vikingthe.dev
-    secretName: cloudflare-origin-cert
+    secretName: vikingthe-origin-cert
   rules:
   - host: vikingthe.dev
     http:
@@ -40,7 +40,7 @@ spec:
   tls:
   - hosts:
     - grafana.vikingthe.dev
-    secretName: cloudflare-origin-cert
+    secretName: vikingthe-origin-cert
   rules:
   - host: grafana.vikingthe.dev
     http:
