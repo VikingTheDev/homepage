@@ -192,17 +192,22 @@ kubectl create namespace homepage
 #### 3.2 Deploy Production Stack
 
 ```bash
-# Option 1: Use the deployment script
-./scripts/deploy-k8s.sh prod
-
-# Option 2: Manual deployment
-# Deploy all production resources using Kustomize
+# Deploy all production resources EXCEPT Vault (managed separately)
 kubectl apply -k k8s/overlays/prod
+
+# Deploy Vault manually (not managed by ArgoCD to prevent restart loops)
+kubectl apply -f k8s/base/vault.yaml
+kubectl apply -f k8s/base/vault-ingress.yaml
 
 # Monitor deployment (may take 3-5 minutes for all pods to start)
 watch kubectl get pods -n homepage
 # Press Ctrl+C when all pods show Running or Completed status
 ```
+
+**Important**: Vault is deployed manually (not via ArgoCD) because:
+- Vault's sealed/unsealed state causes ArgoCD to detect drift
+- ArgoCD's self-heal would constantly restart the pod
+- Manual deployment ensures Vault stays running while sealed
 
 #### 3.3 Initialize Vault
 

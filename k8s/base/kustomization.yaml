@@ -3,8 +3,8 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - vault.yaml
-  - vault-ingress.yaml
+  # vault.yaml and vault-ingress.yaml are deployed manually (not via ArgoCD)
+  # to prevent restart loops from ArgoCD's self-heal detecting Vault seal state changes
   - postgres.yaml
   - valkey.yaml
   - minio.yaml
