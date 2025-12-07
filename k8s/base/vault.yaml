@@ -83,14 +83,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 5
-        readinessProbe:
-          httpGet:
-            path: /v1/sys/health?standbyok=true&sealedcode=200&uninitcode=200
-            port: 8200
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 10
       volumes:
       - name: vault-config
         configMap:
