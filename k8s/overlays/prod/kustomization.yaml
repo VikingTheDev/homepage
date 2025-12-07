@@ -12,9 +12,9 @@ patchesStrategicMerge:
 
 images:
   - name: ghcr.io/vikingthedev/homepage-backend
-    newTag: prod-855bd24
+    newTag: prod-c0715dc
   - name: ghcr.io/vikingthedev/homepage-frontend
-    newTag: prod-855bd24
+    newTag: prod-c0715dc
 
 replicas:
   - name: backend
