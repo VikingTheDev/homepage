@@ -91,15 +91,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
-  namespace: homepage
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
     - grafana.vikingthe.dev
-    secretName: grafana-tls
+    secretName: vikingthe-origin-cert
   rules:
   - host: grafana.vikingthe.dev
     http:
