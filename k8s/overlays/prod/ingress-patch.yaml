@@ -25,6 +25,10 @@ spec:
         pathType: Prefix
         backend:
           service:
+            name: frontend
+            port:
+              number: 8080
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -37,10 +41,6 @@ spec:
   - hosts:
     - grafana.vikingthe.dev
     secretName: cloudflare-origin-cert
-  rules:ace: homepage
-  annotations:
-    kubernetes.io/ingress.class: "traefik"
-spec:
   rules:
   - host: grafana.vikingthe.dev
     http:
