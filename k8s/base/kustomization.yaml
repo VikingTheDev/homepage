@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - vault.yaml
+  - vault-ingress.yaml
   - postgres.yaml
   - valkey.yaml
   - minio.yaml
