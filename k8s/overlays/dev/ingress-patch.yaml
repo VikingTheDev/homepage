@@ -2,7 +2,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: homepage-ingress
-  namespace: homepage-dev
   annotations:
     kubernetes.io/ingress.class: "traefik"
 spec:
@@ -30,11 +29,10 @@ spec:
               number: 8080
 ---
 apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
-  namespace: homepage-dev
-  annotations:
     kubernetes.io/ingress.class: "traefik"
 spec:
   tls:
