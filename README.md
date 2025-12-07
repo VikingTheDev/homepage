@@ -206,6 +206,47 @@ watch kubectl get pods -n homepage
 
 #### 3.3 Initialize Vault
 
+**Option A: Web UI (Recommended)**
+
+1. **Access Vault UI**: Open `https://vault.vikingthe.dev` in your browser
+
+2. **Initialize Vault**:
+   - Click "Initialize"
+   - Key shares: `5`
+   - Key threshold: `3`
+   - Click "Initialize"
+   - **CRITICAL**: Download the keys JSON file and store it securely!
+
+3. **Unseal Vault**:
+   - Enter any 3 of the 5 `keys_base64` values from your downloaded file
+   - Click "Continue to Unseal" after each key
+   - After the 3rd key, Vault will be unsealed
+
+4. **Login**:
+   - Use the `root_token` from your downloaded keys file
+   - You're now in the Vault UI!
+
+5. **Set up AppRole for Backend**:
+   ```bash
+   # On your VPS, port-forward to Vault
+   kubectl port-forward -n homepage svc/vault 8200:8200
+   
+   # In another terminal, run the initialization script
+   # It will prompt for your root token from the downloaded keys
+   cd ~/code/homepage
+   ./scripts/vault-init.sh homepage
+   
+   # The script will:
+   # - Set up PKI for mTLS certificates
+   # - Create AppRole for backend authentication
+   # - Display Role ID and Secret ID
+   # - Offer to create the Kubernetes secret automatically
+   
+   # IMPORTANT: When prompted, choose 'y' to create the secret
+   ```
+
+**Option B: CLI Only**
+
 ```bash
 # In one terminal: Port-forward to Vault
 kubectl port-forward -n homepage svc/vault 8200:8200
@@ -235,17 +276,38 @@ kubectl port-forward -n homepage svc/vault 8200:8200
 #   --from-literal=secret-id=<SECRET_ID>
 ```
 
-**Note on Vault Unsealing**: After a pod restart, Vault will be sealed. You have two options:
+**Note on Vault Unsealing**: 
 
-1. **Automatic (recommended for production)**: Create a Kubernetes Job that unseals Vault on startup
-2. **Manual**: Run the unseal script whenever the pod restarts:
-   ```bash
-   # Port-forward to Vault
-   kubectl port-forward -n homepage svc/vault 8200:8200
-   
-   # Run unseal script (needs vault-keys.txt in current directory)
-   ./scripts/vault-unseal.sh homepage
-   ```
+After a pod restart, Vault will be sealed and needs to be unsealed before the backend can access it.
+
+**Unseal via Web UI:**
+1. Go to `https://vault.vikingthe.dev`
+2. Enter any 3 of your 5 `keys_base64` values
+3. Vault is now unsealed and ready
+
+**Unseal via CLI:**
+```bash
+# Port-forward to Vault
+kubectl port-forward -n homepage svc/vault 8200:8200
+
+# Unseal manually with vault CLI
+export VAULT_ADDR=http://localhost:8200
+vault operator unseal <key1>
+vault operator unseal <key2>
+vault operator unseal <key3>
+
+# Or use the helper script (requires vault-keys.txt in current directory)
+./scripts/vault-unseal.sh homepage
+```
+
+**Verify Backend Can Connect:**
+```bash
+# Check backend logs after Vault is unsealed
+kubectl logs -n homepage -l app=backend --tail=50
+
+# You should see successful Vault authentication
+# If you see "Vault is sealed" errors, unseal Vault first
+```
 
 #### 3.4 Configure Let's Encrypt (SSL Certificates)
 
